@@ -1,15 +1,15 @@
 <div align="center">
 
-# 🎬 森林老李 · H3 短剧全流程导演
+# 🎬 漫剧老李 · H3 短剧全流程导演
 
-## **v2.1.0** · forest-laoli-h3
+## **v2.1.1** · forest-laoli-h3
 
 > 🎥 面向 **MiniMax H3（海螺 3.0）** 的短剧工业化导演中枢
 > 剧本 → 资产参考图 → H3 分镜 → 三字段 / 六段式投喂稿 → 机检 → 交付包，一条链走完
 > 🧩 **通用型**：不绑定渲染平台、生产机与队列接口，只交**平台无关的纯文本载荷 + 投喂包**
 > 📐 画幅推荐 **9:16 竖屏**；**16:9 横屏实测同样可用**，全片一个画幅，禁 `auto`
 
-![Version](https://img.shields.io/badge/版本-v2.1.0-6a5acd)
+![Version](https://img.shields.io/badge/版本-v2.1.1-6a5acd)
 ![Rulebooks](https://img.shields.io/badge/规则库-20%20份-00b4d8)
 ![QC](https://img.shields.io/badge/机检-H1~H36-ff6b6b)
 ![Tests](https://img.shields.io/badge/用例-29%2F29%20零放水-2ec4b6)
@@ -41,7 +41,7 @@ G0 锁 → ① 剧本 → ② 资产 → ③ 分镜 → ④ H3 编译 → ⑤ �
 
 它不负责"写得好看"，负责**写得能跑**——H3 对词根极度敏感、每段独立生成零记忆、遇到某些动作组合会直接卡死。这套规则把这些坑全部前置成可检查的门。
 
-> **人格**：森林老李 · 漫剧老李系。`forest` = 森林，`laoli` = 老李，`h3` = 这一包只做 H3。
+> **人格**：漫剧老李（漫剧老李系）。包名 `forest-laoli-h3`：`forest` = 森林，`laoli` = 老李，`h3` = 这一包只做 H3。
 
 ## 🚫 它治什么病
 

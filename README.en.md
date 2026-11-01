@@ -1,15 +1,15 @@
 <div align="center">
 
-# 🎬 Forest Laoli · H3 Short-Drama Director
+# 🎬 Manju Laoli · H3 Short-Drama Director
 
-## **v2.1.0** · forest-laoli-h3
+## **v2.1.1** · forest-laoli-h3
 
 > 🎥 An industrial directing system for **MiniMax H3 (Hailuo 3.0)** short dramas
 > Script → asset reference sheets → H3 storyboard → three-field / six-section prompt payload → machine QC → delivery package, in one chain
 > 🧩 **Platform-agnostic**: no renderer, production host, or queue API is bound. You get plain-text payloads + a handoff package.
 > 📐 **9:16 vertical** recommended; **16:9 landscape works too** — one aspect ratio per film, never `auto`
 
-![Version](https://img.shields.io/badge/version-v2.1.0-6a5acd)
+![Version](https://img.shields.io/badge/version-v2.1.1-6a5acd)
 ![Rulebooks](https://img.shields.io/badge/rulebooks-20-00b4d8)
 ![QC](https://img.shields.io/badge/QC-H1~H36-ff6b6b)
 ![Tests](https://img.shields.io/badge/tests-29%2F29%20strict-2ec4b6)
@@ -41,7 +41,7 @@ An **executable rulebook for AI agents** (OpenClaw skill / Agent Skill package) 
 
 It doesn't aim to "sound good" — it aims to **run**. H3 is extremely word-root sensitive, generates every segment with zero memory, and deadlocks on specific action combinations. This package turns those failures into pre-flight, checkable gates.
 
-> **Persona**: Forest Laoli · of the 漫剧老李 line. `forest` = the name, `laoli` = the IP persona, `h3` = this package only does H3.
+> **Persona**: 漫剧老李 (Manju Laoli). The package id is `forest-laoli-h3`: `forest` = the name, `laoli` = the IP persona, `h3` = this package only does H3.
 
 ## 🚫 What it fixes
 

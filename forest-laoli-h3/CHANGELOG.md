@@ -1,5 +1,20 @@
 # 变更记录
 
+## v2.1.1（2026-11-01）· 中文人格名统一为「漫剧老李」
+
+**纯元数据修正，零功能变更。** 中文名一律写「漫剧老李」，不再写「森林老李」；包名 `forest-laoli-h3` 不变（`forest` = 森林，`laoli` = 老李，`h3` = 只做 H3）。
+
+| 位置 | 改动 |
+|---|---|
+| `SKILL.md` description | `人格：森林老李 · 漫剧老李系` → `人格：漫剧老李` |
+| `SKILL.md` 触发词 | 「漫剧老李」提到首位；保留 `森林老李（旧称）`、`forest laoli` 作为兼容触发词 |
+| `SKILL.md` 标题 / frontmatter | `v2.1.0` → `v2.1.1` |
+| `README.md` / `README.en.md` | 标题、人格行、版本徽章同步（Manju Laoli） |
+
+**验证**：29 用例回归全绿；`check_docs.py` 文档自检通过。
+
+---
+
 ## v2.1.0（2026-11-01）· 改名 `forest-laoli-h3`
 
 **纯改名，零功能变更。** 从 `h3-short-drama-director` 改为 `forest-laoli-h3`，把人格标识（森林老李 · 漫剧老李系）写进包名，不再只靠 description 认人。
