@@ -42,7 +42,7 @@
 ✅ his head snaps back and his shoulder folds inward; the camera holds still
 ```
 
-> 源：`camera-specs-15rules.md` §二「慢动作跟镜、升格默认禁用」；`camera-action-specs.md` §六 Time Ramp
+> 源（包外溯源）：`short-drama-director/references/camera-specs-15rules.md` §二「慢动作跟镜、升格默认禁用」；`camera-action-specs.md` §六 Time Ramp
 > **与 manju 的差异**：Seedance 2.5 有 Hit-Stop 三件套，H3 没有。这条不能照搬，必须换。
 
 ### 0.3 事实三：H3 不认「跟随谁」
@@ -105,12 +105,12 @@
 |---|---|---|---|---|---|---|
 | 1 | 固定 | A | `the camera holds still` | — | 全部 | 写 `still` 比 `fixed` 稳；`fixed` 偶尔被读成"修好" |
 | 2 | 横移 | A | `the camera slides right 40 cm over two seconds along the wall` | 特写 15cm / 中景 60cm / 全景 1.5m | 中景以上 | **特写禁横移**（会甩出画） |
-| 3 | 竖移 | B | `the camera rises 30 cm over three seconds` | ≤50cm | 中景以上 | 竖屏里竖移比横移好用（§五） |
+| 3 | 竖移 | B | `the camera rises 30 cm over three seconds` | ≤50cm | 中景以上 | 竖屏里竖移比横移好用（§5.2）；横屏压到 25cm（§5.4） |
 | 4 | 推镜 | A | `the camera slides forward 12 cm over three seconds on a rail` | 10–15cm（特写）/ 30–50cm（中景） | 近景 / 特写 | **必须带 cm + 时长** |
 | 5 | 拉镜 | A | `the camera pulls back 20 cm over two seconds` | 同上 | 中景 / 全景 | 收段最好用 |
 | 6 | 跟拍 | C | `the camera drifts with her, staying at her shoulder height` | 跟随实际步速 | 中景 / 全景 | 禁写 `follow her` |
 | 7 | 摇镜（水平） | A | `the camera pans left, thirty degrees` | ≤45° | 全景 / 中景 | 给**角度**而不是"慢慢摇" |
-| 8 | 俯仰 | A | `the camera tilts up, fifteen degrees` | ≤30° | 中景以上 | 竖屏里比横摇自然 |
+| 8 | 俯仰 | A | `the camera tilts up, fifteen degrees` | ≤30° | 中景以上 | 竖屏里比横摇自然；横屏可放宽到 20° |
 | 9 | 轨道 | A | `the camera tracks 60 cm over three seconds along the table edge` | 按景别 | 中景以上 | 与横移同义，`track` 更精确 |
 | 10 | 升降 | B | `the camera rises from waist height to eye level` | 高度差 ≤1m | 全景 / 中景 | 大升降（>1m）H3 容易失焦 |
 | 11 | 手持微晃 | B | `slight hand-held sway` | 极轻 | 全部 | 再加"剧烈"会糊片 |
@@ -156,7 +156,7 @@
 
 ### 1.5 官方词表 ↔ 本包句式（2026-10-24 吸收《MiniMax-H3 系统指令》母本）
 
-立映客户端 13 个「模式」背后共用同一份系统指令母本，里面给了 15 条运镜关键词。**它是 H3 训练分布上的原生 token，读得懂；但不能照抄成稿**——照抄有两个坑。
+H3 官方系统指令（各客户端「模式」背后共用同一份母本）给了 15 条运镜关键词。**它是 H3 训练分布上的原生 token，读得懂；但不能照抄成稿**——照抄有两个坑。
 
 | 官方关键词 | 意思 | 本包对应 | 照抄风险 |
 |---|---|---|---|
@@ -237,7 +237,7 @@ the camera pulls back 25 cm over three seconds, the desk edge entering the lower
 横移（展开空间）
 the camera slides right 40 cm over two seconds along the wall, the window coming into view
 
-竖移（竖屏优先）
+竖移（竖屏优先；横屏压 0.6 倍）
 the camera rises 30 cm over three seconds, her face moving toward the upper third of the frame
 ```
 
@@ -325,9 +325,11 @@ H3 段短，**一段只走一个情绪拐点**，不要在一段里塞完整曲�
 
 ---
 
-## 五、9:16 竖屏的运镜特殊性（★ 本包只做竖屏）
+## 五、画幅差异：9:16 竖屏（推荐）与 16:9 横屏（实测可用）
 
-> 源：`camera-action-specs.md` §三「9:16 竖屏」——manju 是三分支之一，本包**只保留竖屏这一支并加厚**。
+> 源：`camera-action-specs.md` §三「9:16 竖屏」+ §四「16:9 横屏」。
+> **本包推荐竖屏**（短剧主流形态，模板默认按竖屏写）；**16:9 横屏实测同样跑得通**，规则见 §5.4，别硬套竖屏那套。
+> **一部长片只选一档**，段间不换——换了段缝必崩。
 
 ### 5.1 竖屏的物理差异
 
@@ -374,6 +376,28 @@ H3 段短，**一段只走一个情绪拐点**，不要在一段里塞完整曲�
 | 强调两人对峙 | 并排双人中景 | 过肩 + 前景后肩虚焦 |
 | 人物登场 | 横向跟入画 | `rises with him as he stands` |
 | 压迫感 | 低机位仰拍全景 | 低机位仰拍**中景**（竖屏装不下全景的压迫） |
+
+### 5.4 16:9 横屏的四条法则（用户实测档，别照抄竖屏）
+
+横屏的短板换了个方向：**纵向短、横向长**。竖屏那套"纵向优先 + 横移砍半"在横屏里是反的。
+
+**① 横向优先**
+```
+✅ the camera slides right 60 cm over three seconds on a rail
+❌ the camera rises 1.2 m        （横屏里竖移一大就出画顶）
+```
+展开空间靠**横移 + 横向铺陈**，不靠上下翻。横移上限可放到 **40–60 cm**（竖屏是 20 cm 再乘 0.5）。
+
+**② 竖移压到竖屏的 0.6 倍**
+`rises 40 cm` → 横屏写 `rises 25 cm`。超过 30 cm 的竖移在 16:9 里会把人头顶切掉。
+
+**③ 双人可并排，不用前后错位**
+横屏空间够，`she is on the left, he is on the right` 真的能一人一半还给脸。**但越轴不变式照写**——并排不等于可以不锁左右。
+
+**④ 全景/大仰拍解锁**
+竖屏装不下的"低机位仰拍全景压迫感"，横屏直接可用。全景比例可以从竖屏的 10–15% 提到 **20–30%**，这正是横屏的价值所在。
+
+> **横屏的代价要认**：竖屏"脸大"的红利没了。同一景别下横屏的人脸像素占比更小，**特写比例要往上提 5–10%**，否则短剧最吃的情感戏会显得远。
 
 ---
 
@@ -461,7 +485,7 @@ H3 段短，**一段只走一个情绪拐点**，不要在一段里塞完整曲�
 | 7 | **动作主体** | 全景 / 中景 | 低机位贴地 × 仰 | 跟拍 / 手持 | 实际步速 | 打斗位移、招式（打戏另见 `sd-combat`） |
 | 8 | **极致细节** | 特写 / 微距 | 俯拍 或 平视 | 固定 或 微推 | 5cm | 关键道具、泪滴、纹理 |
 
-**用法**：按情绪/信息任务选一行 → **整行取齐** → 再按 §4.3 三条禁令 + §5 竖屏规则复核。
+**用法**：按情绪/信息任务选一行 → **整行取齐** → 再按 §4.3 三条禁令 + §5 画幅规则（竖屏 §5.2 / 横屏 §5.4）复核。
 
 ---
 
@@ -513,7 +537,7 @@ manju 原式：升格 → 螺旋环绕 → 固定大特写 → 缓拉。H3 换�
 | M02 | 推到一半人物站位漂了 | 推幅超景别上限 | 按 §2.3 砍（特写 10cm） |
 | M03 | 镜头自己动（你没写运镜） | 缺运镜要素，H3 自由发挥 | 每镜**必须**写运镜，静止也写 `holds still` |
 | M04 | 镜头自己加了一个开场全景 | 首镜没给主体锚 | `[Shot 1]` 首句写具名主体（写 `<Subject 1>`） |
-| M05 | 横移把主体甩出画 | 竖屏 + 横移幅度过大 | 改竖移或砍半（§5.2） |
+| M05 | 横移把主体甩出画 | 竖屏 + 横移幅度过大 | 改竖移或砍半（§5.2）；横屏则查是否超 60cm（§5.4） |
 | M06 | 特写里出现两个人的脸 | 特写 + 跟拍/环绕 | 特写只配固定或 10cm 微推 |
 | M07 | 画面糊成一片 | 手持剧烈晃动写太长 | 改成单次冲击 `jolts once` |
 | M08 | 有"卡帧"感 | 静 → 动 没给触发 | 加触发事件（门响/起身） |
@@ -569,7 +593,7 @@ manju 原式：升格 → 螺旋环绕 → 固定大特写 → 缓拉。H3 换�
 每镜必写：景别 · 角度 · 运镜    （缺一即失控）
 每推拉必带：12 cm + over three seconds + on a rail
 特写幅度上限 10cm，中景 40cm，全景 80cm
-竖屏：纵向优先，横移砍半，双人用前后不用并排
+竖屏：纵向优先，横移砍半，双人用前后不用并排｜横屏：横向优先，竖移×0.6，双人可并排
 禁：升格 / Hit-Stop / 急速变焦 / 滑动变焦 / 摇臂 / Snorricam
 替代：时间操控 → 写受力结果；滑动变焦 → 拉远 + 焦点转移
 动→静合法，静→动必须有触发

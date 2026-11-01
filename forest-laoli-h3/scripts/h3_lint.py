@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-h3_lint.py — MiniMax H3 提示稿机检（H1~H35 · 支持单段与多段合稿自动切分校验）
+h3_lint.py — MiniMax H3 提示稿机检（H1~H36 · 支持单段与多段合稿自动切分校验）
 
 用法:
     python h3_lint.py prompt.md --duration 15
@@ -113,7 +113,34 @@ SOFT_EN_PATTERNS = [
     r"\bline\b", r"\bframe\b", r"\bdepth of field\b", r"\bcomposition\b",
 ]
 
-ASPECT_RE = re.compile(r"(?<![\d:.])(\d{1,2}):(\d{1,2})(?![\d:.])")
+# 画幅识别：必须同时吃下三种真实写法，否则会静默漏检
+#   9:16  半角冒号（标准）
+#   9：16 全角冒号（中文输入法默认产出，最常见）
+#   16x9  字母 x / × 分隔（口头与表格里常见）
+# 时间码 00:06.000 靠前后「非数字/冒号/点」的边界排除，不会被当成画幅。
+# x 写法只认官方六档，避免把 "3x3 网格" 之类的描述误当画幅。
+ASPECT_RE = re.compile(
+    r"(?<![\d:.:A-Za-z×])(\d{1,2})\s*[:：]\s*(\d{1,2})(?![\d:.:A-Za-z×])"
+)
+ASPECT_X_RE = re.compile(
+    r"(?<![\d:.:A-Za-z×])(21|16|9|4|3|1)\s*[x×]\s*(9|16|4|3|1)(?![\d:.:A-Za-z×])",
+    re.I,
+)
+_KNOWN_RATIOS = {"21:9", "16:9", "4:3", "1:1", "3:4", "9:16"}
+
+
+def find_aspects(text: str):
+    """返回稿子里出现的所有画幅（已规范化成半角 a:b，去重保序）。"""
+    out = []
+    for m in ASPECT_RE.finditer(text):
+        a, b = int(m.group(1)), int(m.group(2))
+        if 0 < a <= 32 and 0 < b <= 32:
+            out.append(f"{a}:{b}")
+    for m in ASPECT_X_RE.finditer(text):
+        r = f"{int(m.group(1))}:{int(m.group(2))}"
+        if r in _KNOWN_RATIOS:
+            out.append(r)
+    return list(dict.fromkeys(out))
 
 
 class Report:
@@ -138,11 +165,78 @@ class Report:
         return [i for i in self.items if i[0] == "WARN"]
 
 
+def _aspect_of(obj):
+    """从载荷里取画幅（兼容 aspect / aspect_ratio / ratio 三种字段名）。"""
+    for k in ("aspect", "aspect_ratio", "ratio"):
+        v = obj.get(k)
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return None
+
+
+def _images_of(obj):
+    for k in ("images", "image_urls", "media", "refs"):
+        v = obj.get(k)
+        if isinstance(v, list):
+            return v
+    return None
+
+
 def load(path: Path, duration_override):
-    raw = path.read_text(encoding="utf-8", errors="replace")
+    """返回 (text, duration, images, aspect)。
+
+    支持三种载荷：
+      1. 单个对象 {prompt|content, images, aspect_ratio, target.duration_seconds}
+      2. **清单数组**（`delivery.md §四` 的格式）——每段 {name,file,duration,aspect,images}，
+         会自动去读同目录下的 `file` 指向的剥壳 .txt，再把多段拼起来喂给切分器。
+      3. 纯文本 .md / .txt
+    """
+    # utf-8-sig：Windows 记事本 / Excel 导出常带 BOM，BOM 会粘在首字段名前面
+    # （`\ufeffsubject_definitions`），导致六段式首字段认不出、连锁刷出一串假 FAIL。
+    raw = path.read_text(encoding="utf-8-sig", errors="replace")
+    if raw.startswith("\ufeff"):
+        raw = raw.lstrip("\ufeff")
     duration = duration_override
+    images = None
+    aspect = None
     if path.suffix.lower() == ".json":
         data = json.loads(raw)
+
+        # ---- 清单数组格式（delivery.md §四）----
+        if isinstance(data, list):
+            chunks, missing, seg_aspect = [], [], None
+            for i, seg in enumerate(data):
+                if not isinstance(seg, dict):
+                    continue
+                txt = seg.get("prompt") or ""
+                fname = seg.get("file")
+                if not txt and fname:
+                    fp = (path.parent / fname)
+                    if fp.exists():
+                        txt = fp.read_text(encoding="utf-8-sig", errors="replace").lstrip("\ufeff")
+                    else:
+                        missing.append(fname)
+                if txt:
+                    chunks.append(txt)
+                if images is None:
+                    images = _images_of(seg)
+                if seg_aspect is None:
+                    seg_aspect = _aspect_of(seg)
+                if duration is None:
+                    duration = seg.get("duration")
+            if not chunks:
+                raise ValueError(
+                    "这份清单里读不到任何稿子正文：请确认每个条目的 `file` "
+                    "指向的 .txt 与本清单在**同一目录**，或条目里直接带 `prompt` 字段"
+                    + (f"（缺失文件：{missing}）" if missing else "")
+                )
+            text = "\n\n".join(chunks)
+            return text, duration, images, seg_aspect
+
+        if not isinstance(data, dict):
+            raise ValueError("JSON 顶层既不是对象也不是数组，无法当载荷读")
+
+        # ---- 单对象格式 ----
         prompt = data.get("prompt") or ""
         if not prompt and isinstance(data.get("content"), list):
             prompt = "\n".join(
@@ -151,22 +245,59 @@ def load(path: Path, duration_override):
         if duration is None:
             target = data.get("target") or {}
             duration = target.get("duration_seconds") or data.get("duration")
-        return prompt, duration
-    return raw, duration
+        return prompt, duration, _images_of(data), _aspect_of(data)
+    return raw, duration, images, aspect
+
+
+def check_picture_overflow(text, images):
+    """H36: 载荷图槽越界（正文最大 Picture N > images 数组长度）。
+
+    只对自带 images 数组的载荷生效——这是唯一能自动判定"省图/漏传"的位置。
+    剥壳 .txt 与纯文生稿没有 images，返回 None 不打扰。
+    """
+    if images is None:
+        return None
+    used = sorted({int(m.group(1)) for m in re.finditer(r"Picture\s+(\d+)", text, re.I)})
+    if not used:
+        return None                      # 纯 T2VA，不挂参考图
+    n = len(images)
+    mx = max(used)
+    if mx > n:
+        return ("fail", f"图槽越界：正文引用到 `Picture {mx}`，images 只有 {n} 张——"
+                        f"省图/漏传会让后续槽位整体前移，轻则人景贴反，重则直接卡死")
+    empties = [i + 1 for i, v in enumerate(images)
+               if v is None or (isinstance(v, str) and not v.strip())]
+    if empties:
+        return ("fail", f"images 第 {empties} 个槽位是空值——空槽等同省图，后面槽位照样前移")
+    if used != list(range(1, mx + 1)):
+        missing = [i for i in range(1, mx + 1) if i not in used]
+        return ("warn", f"Picture 编号不连续，正文没用到 {missing}——编号可以跳，但全片必须一致，"
+                        f"且 images 对应槽位不能删")
+    return ("ok", f"图槽未越界（正文引用 1..{mx}，images {n} 张）")
 
 
 def split_multi_segments(text: str):
     """
-    自动识别单文件内是否包含多段投喂稿（例如含多个 subject_definitions 或 integrated_multimodal_description）。
+    自动识别单文件内是否包含多段投喂稿。
+
+    ⚠ 切分锚点必须只取**一个**字段：`subject_definitions` 与
+    `integrated_multimodal_description` 是同一段里的两个不同字段，
+    若两者都当起点，**任何单段稿都会被误切成两段**（剥壳后的 .txt 尤其明显，
+    因为它就是"字段名纯文本独占一行"）。所以先在两类里选出现次数多的那个当锚，
+    两类都不超过 1 次 ⇒ 单段。
+
     返回 [(seg_label, seg_text), ...]。若只有一段则返回 [(None, text)]。
     """
-    starts = list(
-        re.finditer(
-            r"^[ \t]*(?:#{1,6}[ \t]*)?(?:\*\*)?`?(subject_definitions|integrated_multimodal_description)`?(?:\*\*)?[ \t]*:?[ \t]*$",
-            text,
-            re.MULTILINE,
-        )
-    )
+    def _anchor(field):
+        return list(re.finditer(
+            r"^[ \t]*(?:#{1,6}[ \t]*)?(?:\*\*|__)?`?" + field + r"`?(?:\*\*|__)?[ \t]*:?[ \t]*$",
+            text, re.MULTILINE | re.IGNORECASE,
+        ))
+
+    subs = _anchor("subject_definitions")
+    imds = _anchor("integrated_multimodal_description")
+    # 次数相同优先 subject_definitions（它是每段真正的开头）
+    starts = subs if len(subs) >= len(imds) else imds
     if len(starts) <= 1:
         return [(None, text)]
     segments = []
@@ -779,7 +910,7 @@ def check(text, duration, aspect=None):
                             r"cave|cavern|grotto|bridge|dock|pier|harbor|port|beach|shore|"
                             r"riverbank|lakeside|waterfall|pond|lake|river|stream|plaza|square|"
                             r"station|market|bazaar|mountain|mountains)\b", re.I)
-    PROP_WORD = re.compile(r"\b(?:handkerchief|photograph|photo|booklet|ledger|pot|cup|phone|sword|blade|letter|key|box|jade|pendant)\b", re.I)
+    PROP_WORD = re.compile(r"\b(?:handkerchief|photograph|photo|booklet|ledger|pot|cup|phone|sword|blade|letter|key|box|jade|pendant|suitcase|luggage|trunk|bag|briefcase|backpack|umbrella|envelope|contract|document|necklace|bracelet|cigarette|lighter|bottle|glass|knife|scissors|mirror)\b", re.I)
     space_tags = set()
     prop_tags = set()
     for m in re.finditer(r"<Subject\s+(\d+)>\s+is[^.\n]{0,140}", text):
@@ -940,26 +1071,53 @@ def check(text, duration, aspect=None):
         r.ok("H35", f"氛围层齐（光位={'有' if has_light else '缺'} / "
                     f"空气={'有' if has_air else '缺'} / 前景={'有' if has_fore else '缺'}）")
 
-    # ---------- H14 画幅恒 9:16 ----------
-    ratios = []
-    for m in ASPECT_RE.finditer(text):
-        a, b = int(m.group(1)), int(m.group(2))
-        if 0 < a <= 32 and 0 < b <= 32:
-            ratios.append(f"{a}:{b}")
-    ratios = list(dict.fromkeys(ratios))
-    # 画幅基准：默认 9:16（短剧竖屏），--aspect 可声明别的（如 16:9 横屏项目）。
-    # 2026-10-21 用户要 16:9 横屏仙侠，原来写死 9:16 会把横屏项目全判 FAIL。
-    canon = (aspect or "9:16").strip()
-    bad_ratios = [x for x in ratios if x != canon]
-    if bad_ratios:
-        r.fail("H14", f"画幅必须恒为 {canon}，检测到其它比例：{bad_ratios}")
-    elif canon in ratios:
-        r.ok("H14", f"画幅 {canon}")
-    elif aspect:
-        declared = aspect.strip()
-        r.ok("H14", f"画幅 {declared}（外部声明，prompt 内不写比例）")
+    # ---------- H14 画幅全片一致（推荐 9:16，16:9 实测可用） ----------
+    # v2.0：不再是"恒 9:16"。9:16 是推荐档，16:9 实测跑得通；只禁 auto/adaptive 与段间混用。
+    # v2.0.2：吃下 9：16（全角）与 16x9 写法——原来只认半角冒号，中文输入法打出的全角冒号
+    #         会被静默忽略，混用检测直接失效（漏报）。此时 raw_ratios 里保留原始写法，便于报错定位。
+    ratios = find_aspects(text)
+    RECOMMENDED = ("9:16", "16:9")
+    canon = (aspect or "").strip().replace("：", ":").replace("x", ":").replace("X", ":")
+    if re.fullmatch(r"\d{1,2}:\d{1,2}", canon or ""):
+        a, b = canon.split(":")
+        canon = f"{int(a)}:{int(b)}"
     else:
-        r.warn("H14", f"未声明画幅——本项目恒用 {canon}，请在载荷写 aspect_ratio: \"{canon}\" 或用 --aspect {canon}")
+        canon = (aspect or "").strip()
+
+    auto_hit = re.search(
+        r'(?:aspect_ratio|"aspect"|\bratio\b|画幅)[^\n]{0,24}\b(auto|adaptive)\b', text, re.I
+    )
+    if canon:
+        bad_ratios = [x for x in ratios if x != canon]
+        if bad_ratios:
+            r.fail("H14", f"画幅必须全片一致为 {canon}，检测到其它比例：{bad_ratios}")
+        elif canon in ratios:
+            r.ok("H14", f"画幅 {canon}（全片一致）")
+        else:
+            r.ok("H14", f"画幅 {canon}（外部声明，prompt 内不写比例）")
+    elif auto_hit:
+        r.fail("H14", f"画幅用了 {auto_hit.group(1)}——它会在段与段之间自己改画幅，段缝必崩；"
+                      f"改成固定 9:16（推荐）或 16:9，全片一致")
+    elif len(ratios) > 1:
+        r.fail("H14", f"画幅混用 {ratios}——段间换画幅必崩段缝；全片只留一个（推荐 9:16，16:9 亦可）")
+    elif len(ratios) == 1:
+        only = ratios[0]
+        if only in RECOMMENDED:
+            r.ok("H14", f"画幅 {only}（{'推荐档' if only == '9:16' else '横屏档·实测可用'}）")
+        else:
+            r.warn("H14", f"画幅 {only} 非本包推荐档（推荐 9:16，16:9 实测可用）"
+                          f"——确认这是有意为之，且全片一致")
+    else:
+        r.warn("H14", "未声明画幅——请在载荷写 aspect_ratio（推荐 \"9:16\"，横屏用 \"16:9\"），"
+                      "或用 --aspect 声明；全片必须一致，禁 auto")
+
+    # H14 附：写法不规范（全角冒号 / 字母 x）——已按标准比例识别，但提醒统一写法，
+    # 免得下游按字符串精确匹配的脚本（清单校验、渲染端映射）对不上。
+    odd = re.findall(r"\d{1,2}\s*[：×]\s*\d{1,2}|\d{1,2}[xX]\d{1,2}", text)
+    odd = [x for x in odd if not re.fullmatch(r"\d{1,2}:\d{1,2}", x)]
+    if odd:
+        r.warn("H14", f"画幅写法不规范 {sorted(set(odd))}——本包已按标准比例识别，"
+                      f"但建议统一写成半角冒号（如 9:16），否则下游字符串匹配可能对不上")
 
     # ---------- H9 画外声 ----------
     if re.search(r"off-screen|voiceover|画外音|OS\)|（OS|\(VO\)", body, re.I):
@@ -1054,10 +1212,10 @@ def check_cross_segment_slots(segments):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="MiniMax H3 提示稿机检 H1~H35")
+    ap = argparse.ArgumentParser(description="MiniMax H3 提示稿机检 H1~H36")
     ap.add_argument("path", help="prompt.md / prompt.txt / payload.json")
     ap.add_argument("--duration", type=float, default=None, help="段时长（秒），用于 H2/H3")
-    ap.add_argument("--aspect", default=None, help="画幅外部声明（渲染端节点参数决定时用），如 9:16")
+    ap.add_argument("--aspect", default=None, help="画幅外部声明（渲染端节点参数决定时用）：9:16（默认推荐）或 16:9（横屏）")
     ap.add_argument("--whole", action="store_true", help="强制按单段整份校验（不自动切分多段合稿）")
     ap.add_argument("--json", action="store_true", help="以 JSON 输出结果")
     ap.add_argument("--quiet", action="store_true", help="只显示 FAIL/WARN")
@@ -1068,22 +1226,34 @@ def main():
         print(f"文件不存在：{p}", file=sys.stderr)
         return 2
     try:
-        text, duration = load(p, args.duration)
+        text, duration, images, json_aspect = load(p, args.duration)
     except Exception as e:
         print(f"读取失败：{e}", file=sys.stderr)
         return 2
     if not text.strip():
         print("稿为空", file=sys.stderr)
         return 2
+    # 画幅优先级：命令行 --aspect > 载荷自带 aspect/aspect_ratio > 正文里扫
+    if not args.aspect and json_aspect:
+        args.aspect = json_aspect
 
     segments = [(None, text)] if args.whole else split_multi_segments(text)
     if len(segments) == 1:
         rep = check(text, duration, aspect=args.aspect)
     else:
         rep = Report()
+        seen_global = set()          # 全片级告警（如"未声明画幅"）只报一次，不按段刷屏
+        GLOBAL_CODES = ("H14",)
         for label, seg_txt in segments:
             sub = check(seg_txt, duration, aspect=args.aspect)
             for lvl, code, msg in sub.items:
+                if code in GLOBAL_CODES:
+                    key = (code, re.sub(r"^\[[^\]]*\]\s*", "", msg or ""))
+                    if key in seen_global:
+                        continue
+                    seen_global.add(key)
+                    rep.items.append((lvl, code, f"（全片）{msg}"))
+                    continue
                 rep.items.append((lvl, code, f"[{label}] {msg}" if msg else f"[{label}]"))
         slot_errs = check_cross_segment_slots(segments)
         if slot_errs:
@@ -1091,6 +1261,12 @@ def main():
                 rep.fail("H34", err)
         else:
             rep.ok("H34", f"跨段图槽一致性通过（共 {len(segments)} 段）")
+
+    # H36 图槽越界（仅载荷带 images 数组时生效，单段/多段都查整份）
+    h36 = check_picture_overflow(text, images)
+    if h36:
+        level, msg = h36
+        getattr(rep, level)("H36", msg)
 
     if args.json:
         print(json.dumps(
