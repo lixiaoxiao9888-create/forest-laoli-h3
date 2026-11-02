@@ -42,6 +42,8 @@ An **executable rulebook for AI agents** (OpenClaw skill / Agent Skill package) 
 It doesn't aim to "sound good" — it aims to **run**. H3 is extremely word-root sensitive, generates every segment with zero memory, and deadlocks on specific action combinations. This package turns those failures into pre-flight, checkable gates.
 
 > **Persona**: 漫剧老李 (Manju Laoli). The package id is `forest-laoli-h3`: `forest` = the name, `laoli` = the IP persona, `h3` = this package only does H3.
+>
+> ⚠️ **Unofficial project**: not affiliated with MiniMax. Field specs follow the official open-source repo; the rules and real-machine findings are original to this package. Beta build, integrating and reworking open-source material.
 
 ## 🚫 What it fixes
 
